@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
+	"temlate/proto/proto/pb"
 )
 
 type service interface {
@@ -16,54 +18,51 @@ type service interface {
 
 type Handlers struct {
 	service
+	pb.UnimplementedGatewayTemplateServer
 }
 
 func New(service service) *Handlers {
-	return &Handlers{service}
+	return &Handlers{service: service, UnimplementedGatewayTemplateServer: pb.UnimplementedGatewayTemplateServer{}}
 }
-func (h *Handlers) Post(c *fiber.Ctx) error {
+func (h *Handlers) Create(ctx context.Context, request *pb.CreateRequest) (*pb.CreateResponse, error) {
 	// Read the param noteId
 	//link := c.Params("Link")
+	fmt.Println("Post - ")
 	//var shortUrl model.Links
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	type Template struct {
 		Prefid string `json:"preferid"`
 		Temp   string `json:"template"`
 	}
-	var Temp Template
-	err := c.BodyParser(&Temp)
-	if err != nil {
-		//log.Fatal(err)
-		return err
-	}
+	var Temp Template = Template{Temp: request.Template, Prefid: request.Preferid}
 	fmt.Println("Post - ", Temp.Temp, Temp.Prefid)
 	msg, err := h.service.Create(Temp.Temp, Temp.Prefid)
 	if err != nil {
 		log.Error(err.Error() + msg)
-		return c.SendStatus(http.StatusBadRequest)
+		return &pb.CreateResponse{Template: http.StatusText(400)}, err
 	}
-	return c.SendStatus(http.StatusOK)
+	return &pb.CreateResponse{Template: http.StatusText(200)}, nil
 	// Find the note with the given id
 	// Return the note with the id
 }
 
-func (h *Handlers) Get(c *fiber.Ctx) error {
-	id := c.Params("id")
+func (h *Handlers) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
+	id := in.Id
 	fmt.Println("Get - ", id)
 	msg, err := h.service.Get(id)
 	if err != nil {
-		return c.SendStatus(http.StatusNotFound)
+		return nil, err
 	}
-	return c.SendString(msg)
+	return &pb.GetResponse{Template: msg}, nil
 }
 
-func (h *Handlers) GetAll(c *fiber.Ctx) error {
+func (h *Handlers) GetAll(ctx context.Context, in *pb.GetAllRequest) (*pb.GetAllResponse, error) {
 	fmt.Println("Get all- ")
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	msg, err := h.service.GetAll()
 	if err != nil {
 		log.Error(msg)
-		return c.SendStatus(http.StatusNotFound)
+		return &pb.GetAllResponse{Template: strconv.Itoa(http.StatusNotFound)}, err
 	}
-	return c.SendString(msg)
+	return &pb.GetAllResponse{Template: msg}, nil
 }

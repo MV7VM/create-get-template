@@ -1,0 +1,46 @@
+syntax = "proto3";
+package your.service.v1;
+option go_package = "proto/pb";
+
+import "proto/google/api/annotations.proto";
+
+message CreateRequest {
+  string preferid = 2;
+  string template = 1;
+}
+
+message CreateResponse {
+  string template = 1;
+}
+
+message GetRequest {
+  string id = 1;
+}
+
+message GetResponse {
+  string template = 1;
+}
+message GetAllRequest {
+//  string template = 1;
+}
+message GetAllResponse {
+  string template = 1;
+}
+service GatewayTemplate {
+  rpc Create(CreateRequest) returns (CreateResponse) {
+    option (google.api.http) = {
+      post: "/create"
+      body: "*"
+    };
+  }
+  rpc Get(GetRequest) returns (GetResponse) {
+    option (google.api.http) = {
+      get: "/get/{id}"
+    };
+  }
+  rpc GetAll(GetAllRequest) returns (GetAllResponse) {
+    option (google.api.http) = {
+      get: "/get"
+    };
+  }
+}
