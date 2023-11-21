@@ -46,6 +46,12 @@ func New(ctx context.Context, cfg config.Config) *App {
 
 func Run(app *App) {
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	go func() {
+		if err := app.repository.CacheRecovery(); err != nil {
+			log.Error("fail to cache recovery: " + err.Error())
+			//log.Error("failed to serve: " + err.Error())
+		}
+	}()
 	lis, err := net.Listen("tcp", grpcPort)
 	s := grpc.NewServer()
 	pb.RegisterGatewayTemplateServer(s, app.handlers)

@@ -27,6 +27,27 @@ func New(cfg config.Config) *Repository {
 	return &Repository{pool: pool, cache: make(map[int]string)}
 }
 
+func (r *Repository) CacheRecovery() error {
+	rows, err := r.pool.Query(context.Background(), "SELECT id,template FROM temp")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int
+		var b string
+		err := rows.Scan(&id, &b)
+		//fmt.Println(id, b)
+		if err != nil {
+			continue
+		}
+		if id != -1 {
+			r.cache[id] = b
+		}
+	}
+	return nil
+}
+
 func (r *Repository) CreateTemplate(msg string, id int) (string, error) {
 	_, err := r.pool.Exec(context.Background(), "INSERT INTO temp VALUES ($1,$2)", id, msg)
 	if err != nil {
@@ -55,7 +76,7 @@ func (r *Repository) GetTemplates() (string, error) {
 		var id int
 		var b string
 		err := rows.Scan(&id, &b)
-		fmt.Println(id, b)
+		//fmt.Println(id, b)
 		if err != nil {
 			continue
 		}
